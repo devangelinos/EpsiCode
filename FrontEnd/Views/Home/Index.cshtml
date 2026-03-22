@@ -1,8 +1,98 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@model IEnumerable<EpsiCodeWeb.Models.BookViewModel>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Harry Potter Book Management</h2>
+        <button id="btnSync" class="btn btn-primary">
+            <i class="bi bi-arrow-repeat"></i> Fetch Latest Books
+        </button>
+    </div>
+
+    <input type="text" id="bookSearch" class="form-control mb-3" placeholder="Search books...">
+
+    <table class="table table-hover shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Cover</th>
+                <th>Title</th>
+                <th>Price ($)</th>
+                <th>Copies</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in Model)
+            {
+                <tr>
+                    <td><img src="@book.Cover" alt="Cover" style="width:50px;" class="rounded" /></td>
+                    <td>@book.Title</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm price-input" value="@book.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" data-id="@book.Id" step="0.01" style="width:100px;" />
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm copies-input"
+                               value="@book.NumberOfCopies" data-id="@book.Id" style="width:80px;" />
+                    </td>
+                    <td>
+                        <button class="btn btn-success btn-sm save-btn" data-id="@book.Id">Save</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                ✅ Changes saved successfully to the database!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $('#btnSync').click(function() {
+            $(this).prop('disabled', true).text('Syncing...');
+            fetch('https://localhost:7261/api/books/fetch', { method: 'POST' })
+                .then(() => location.reload());
+        });
+
+        $('.save-btn').click(function() {
+            const $btn = $(this);
+            const id = $btn.data('id');
+            const newPrice = $btn.closest('tr').find('.price-input').val();
+            const newCount = $btn.closest('tr').find('.copies-input').val();
+
+            Promise.all([
+                updateField(id, 'price', { newPrice: parseFloat(newPrice) }),
+                updateField(id, 'copies', { newCount: parseInt(newCount) })
+            ]).then(() => {
+                const toastEl = document.getElementById('successToast');
+                if(toastEl) {
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                }
+            }).catch(err => console.error("Update failed", err));
+        });
+
+        function updateField(id, field, data) {
+            return fetch(`https://localhost:7261/api/books/${id}/${field}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+
+        $('#bookSearch').on('keyup', function() {
+            const value = $(this).val().toLowerCase();
+            $('table tbody tr').filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    </script>
+}
