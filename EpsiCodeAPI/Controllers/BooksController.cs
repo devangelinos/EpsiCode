@@ -22,6 +22,7 @@ namespace EpsiCodeAPI.Controllers
         public async Task<IActionResult> GetBooks()
         {
             await _bookService.SyncBooksAsync();
+        public async Task<IActionResult> UpdatePrice(Guid id, [FromBody] UpdatePriceDto dto)
 
             var books = await _context.Books.ToListAsync();
             return Ok(books);
