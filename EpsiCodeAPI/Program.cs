@@ -14,8 +14,10 @@ builder.Services.AddScoped<IBookRepository, BookRepository>();
 // Register the Book Service
 builder.Services.AddHttpClient<BookService>();
 
-// Add services to the container.
+// Register Order Service
+builder.Services.AddScoped<IOrderService, OrderService>();
 
+// Add services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

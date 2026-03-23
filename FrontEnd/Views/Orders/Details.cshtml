@@ -1,0 +1,131 @@
+﻿@model EpsiCodeWeb.Models.OrderDetailViewModel
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Orders</a></li>
+            <li class="breadcrumb-item active">Order Details</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Order #@Model.OrderId.ToString().Substring(0, 8)</h2>
+            <p class="lead"><strong>Shipping Address:</strong> @Model.Address</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="card bg-light border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Total Cost</h5>
+                    <h2 class="text-primary mb-0">$@Model.TotalCost.ToString("F2")</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Add Book to Order</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Select a Book</label>
+                    <select id="bookSelect" class="form-select">
+                        <option value="">-- Select from Inventory --</option>
+                        @foreach (var book in Model.AvailableBooks)
+                        {
+                            <option value="@book.Id">@book.Title (Stock: @book.NumberOfCopies)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" id="bookQty" class="form-control" value="1" min="1" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button id="btnAddBook" class="btn btn-success w-100">
+                        <i class="bi bi-cart-plus"></i> Add to Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Book Title</th>
+                    <th>Price (at purchase)</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.OrderBooks.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">This order is currently empty.</td>
+                    </tr>
+                }
+                @foreach (var item in Model.OrderBooks)
+                {
+                    <tr>
+                        <td><strong>@item.Title</strong></td>
+                        <td>$@item.PriceAtPurchase.ToString("F2")</td>
+                        <td>@item.Quantity</td>
+                        <td>$@item.SubTotal.ToString("F2")</td>
+                        <td class="text-end">
+                            <button class="btn btn-outline-danger btn-sm remove-item" data-bookid="@item.BookId">
+                                <i class="bi bi-trash"></i> Remove
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const orderId = "@Model.OrderId";
+        const apiUrl = "https://localhost:7261/api/orders";
+
+        $('#btnAddBook').click(function() {
+            const bookId = $('#bookSelect').val();
+            const qty = parseInt($('#bookQty').val());
+
+            if (!bookId) { alert("Please select a book."); return; }
+
+            fetch(`${apiUrl}/${orderId}/books`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookId: bookId, quantity: qty })
+            })
+            .then(async response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert("Validation Error: " + (error.message || "Could not add book. Check stock."));
+                }
+            })
+            .catch(err => console.error("Error adding book:", err));
+        });
+
+        $('.remove-item').click(function() {
+            const bookId = $(this).data('bookid');
+            if (confirm("Are you sure you want to remove this book from the order?")) {
+                fetch(`${apiUrl}/${orderId}/books/${bookId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) location.reload();
+                });
+            }
+        });
+    </script>
+}
