@@ -1,4 +1,5 @@
 using EpsiCodeAPI.Data;
+using EpsiCodeAPI.Hubs;
 using EpsiCodeAPI.Interfaces;
 using EpsiCodeAPI.Jobs;
 using EpsiCodeAPI.Services;
@@ -21,6 +22,9 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 //Register Job
 builder.Services.AddHostedService<BookSyncJob>();
 
+//Register SingalR
+builder.Services.AddSignalR();
+
 // Add services to the container.
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -32,7 +36,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("https://localhost:7234")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -51,5 +56,7 @@ app.UseAuthorization();
 app.UseCors("AllowMyApp");
 
 app.MapControllers();
+
+app.MapHub<SyncHub>("/syncHub");
 
 app.Run();

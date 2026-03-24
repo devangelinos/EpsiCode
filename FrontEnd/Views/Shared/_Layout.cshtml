@@ -32,6 +32,9 @@
             </div>
         </nav>
     </header>
+    <div class="alert alert-info py-1 mb-0 text-center" style="font-size: 0.85rem;">
+        Last Background Sync: <span id="syncTime">Waiting for first run...</span>
+    </div>
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -46,6 +49,34 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        const statusElement = document.getElementById("syncTime");
+
+        //Fetch Initial state on page load
+        fetch("https://localhost:7261/api/books/sync-status")
+            .then(response => response.json())
+            .then(data => {
+                if (data.lastRun !== "Never") {
+                    statusElement.innerText = data.lastRun;
+                }
+            })
+            .catch(err => console.error("Error fetching initial status:", err));
+
+        //Start SignalR
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:7261/syncHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("UpdateSyncStatus", function (timestamp) {
+            statusElement.innerText = timestamp;
+            statusElement.classList.add("text-success", "fw-bold");
+            setTimeout(() => statusElement.classList.remove("fw-bold"), 2000);
+        });
+
+        connection.start().catch(err => console.error("SignalR Error:", err));
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

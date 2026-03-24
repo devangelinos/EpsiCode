@@ -1,6 +1,7 @@
 ﻿using EpsiCodeAPI.Data;
 using EpsiCodeAPI.DTOs;
 using EpsiCodeAPI.Interfaces;
+using EpsiCodeAPI.Jobs;
 using EpsiCodeAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +54,12 @@ namespace EpsiCodeAPI.Controllers
             book.NumberOfCopies = dto.NewCount;
             await _repository.SaveChangesAsync();
             return NoContent();
+        }
+
+        [HttpGet("sync-status")]
+        public IActionResult GetSyncStatus()
+        {
+            return Ok(new { lastRun = BookSyncJob.LastRunTime });
         }
     }
 }

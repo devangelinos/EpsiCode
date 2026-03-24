@@ -1,4 +1,6 @@
-﻿using EpsiCodeAPI.Services;
+﻿using EpsiCodeAPI.Hubs;
+using EpsiCodeAPI.Services;
+using Microsoft.AspNetCore.SignalR;
 
 namespace EpsiCodeAPI.Jobs
 {
@@ -6,12 +8,16 @@ namespace EpsiCodeAPI.Jobs
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BookSyncJob> _logger;
+        private readonly IHubContext<SyncHub> _hubContext;
         private readonly TimeSpan _interval = TimeSpan.FromMinutes(2);
 
-        public BookSyncJob(IServiceScopeFactory scopeFactory, ILogger<BookSyncJob> logger)
+        public static string LastRunTime { get; private set; } = "Never";
+
+        public BookSyncJob(IServiceScopeFactory scopeFactory, ILogger<BookSyncJob> logger, IHubContext<SyncHub> hubContext)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -31,6 +37,12 @@ namespace EpsiCodeAPI.Jobs
                     }
 
                     _logger.LogInformation("Automatic fetch completed successfully.");
+
+
+                    LastRunTime = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss");
+
+                    await _hubContext.Clients.All.SendAsync("UpdateSyncStatus", LastRunTime, stoppingToken);
+
                 }
                 catch (Exception ex)
                 {
