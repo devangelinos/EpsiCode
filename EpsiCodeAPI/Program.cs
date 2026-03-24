@@ -1,5 +1,6 @@
 using EpsiCodeAPI.Data;
 using EpsiCodeAPI.Interfaces;
+using EpsiCodeAPI.Jobs;
 using EpsiCodeAPI.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,9 @@ builder.Services.AddHttpClient<BookService>();
 
 // Register Order Service
 builder.Services.AddScoped<IOrderService, OrderService>();
+
+//Register Job
+builder.Services.AddHostedService<BookSyncJob>();
 
 // Add services to the container.
 builder.Services.AddControllers();
