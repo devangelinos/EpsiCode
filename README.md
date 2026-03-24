@@ -22,6 +22,7 @@ The default configuration expects the API at https://localhost:7261 (or update t
 # Assumptions & tradeoffs 
 1. For each new book i set a random default price and number of copies
 2. The address that the user enters doesnt get validated (could be picked by google maps but for simplicity its a text box now)
+3. Used InMemory DB for simplicity
 
 Sidenote:
 Added the synch job & SignalR bonus tasks
